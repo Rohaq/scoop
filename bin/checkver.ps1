@@ -113,6 +113,7 @@ $Queue | ForEach-Object {
     $regex = ''
     $jsonpath = ''
     $xpath = ''
+    $css = ''
     $replace = ''
 
     if ($json.checkver -eq 'github') {
@@ -144,12 +145,15 @@ $Queue | ForEach-Object {
     if ($json.checkver.xpath) {
         $xpath = $json.checkver.xpath
     }
+    if ($json.checkver.css) {
+        $css = $json.checkver.css
+    }
 
     if ($json.checkver.replace -and $json.checkver.replace.GetType() -eq [System.String]) {
         $replace = $json.checkver.replace
     }
 
-    if (!$jsonpath -and !$regex -and !$xpath) {
+    if (!$jsonpath -and !$regex -and !$xpath -and !$css) {
         $regex = $json.checkver
     }
 
@@ -164,6 +168,7 @@ $Queue | ForEach-Object {
         json     = $json;
         jsonpath = $jsonpath;
         xpath    = $xpath;
+        css      = $css;
         reverse  = $reverse;
         replace  = $replace;
     }
@@ -191,6 +196,7 @@ while ($in_progress -gt 0) {
     $regexp = $state.regex
     $jsonpath = $state.jsonpath
     $xpath = $state.xpath
+    $css = $state.css
     $reverse = $state.reverse
     $replace = $state.replace
     $expected_ver = $json.version
@@ -240,12 +246,23 @@ while ($in_progress -gt 0) {
         }
     }
 
+    if ($css) {
+        [Microsoft.PowerShell.Commands.HtmlWebResponseObject]$site = Invoke-WebRequest $url
+        $matchedSelectors = $site.ParsedHtml.querySelectorAll($css)
+        $ver = $matchedSelectors[0].innerHTML
+    }
+
     if ($jsonpath -and $regexp) {
         $page = $ver
         $ver = ''
     }
 
     if ($xpath -and $regexp) {
+        $page = $ver
+        $ver = ''
+    }
+
+    if ($cssselector -and $regexp) {
         $page = $ver
         $ver = ''
     }

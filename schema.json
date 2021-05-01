@@ -46,12 +46,16 @@
                 "xpath": {
                     "type": "string"
                 },
+                "css": {
+                    "type": "string"
+                },
                 "mode": {
                     "enum": [
                         "download",
                         "extract",
                         "json",
                         "xpath",
+                        "css",
                         "rdf",
                         "metalink",
                         "fosshub",
@@ -248,6 +252,9 @@
                             "type": "string"
                         },
                         "xpath": {
+                            "type": "string"
+                        },
+                        "css": {
                             "type": "string"
                         },
                         "reverse": {

@@ -141,6 +141,49 @@ function find_hash_in_xml([String] $url, [Hashtable] $substitutions, [String] $x
     return format_hash $hash
 }
 
+function find_hash_via_css([String] $url, [Hashtable] $substitutions, [String] $css, [String] $regexp) {
+    try {
+        [Microsoft.PowerShell.Commands.HtmlWebResponseObject]$site = Invoke-WebRequest $url
+    } catch [system.net.webexception] {
+        write-host -f darkred $_
+        write-host -f darkred "URL $url is not valid"
+        return
+    }
+
+    $matchedSelectors = $site.ParsedHtml.querySelectorAll($css)
+
+    if ($regexp) {
+        $regex = New-Object System.Text.RegularExpressions.Regex($regexp)
+        $regexMatches = @()
+        foreach ($element in $matchedSelectors) {
+            if ($reverse) {
+                $match = $regex.Matches($element.innerHTML) | Select-Object -Last 1
+            } else {
+                $match = $regex.Matches($element.innerHTML) | Select-Object -First 1
+            }
+
+            if ($match) {
+                $regexMatches.Add($element.innerHTML)
+            }
+        }
+    } else {
+        if ($reverse) {
+            $hash = $matchedSelectors[-1].innerHTML
+        } else {
+            $hash = $matchedSelectors[0].innerHTML
+        }
+    }
+
+    # Replace placeholders
+    if ($substitutions) {
+        $css = substitute $xpath $substitutions
+    }
+
+    # Getting hash from XML, using XPath
+    $hash = $xml.SelectSingleNode($xpath, $nsmgr).'#text'
+    return format_hash $hash
+}
+
 function find_hash_in_headers([String] $url) {
     $hash = $null
 
@@ -236,6 +279,9 @@ function get_hash_for_app([String] $app, $config, [String] $version, [String] $u
         }
         'xpath' {
             $hash = find_hash_in_xml $hashfile_url $substitutions $xpath
+        }
+        'css' {
+            $hash = find_hash_via_css $hashfile_url $substitutions $css $regex
         }
         'rdf' {
             $hash = find_hash_in_rdf $hashfile_url $basename
